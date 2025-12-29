@@ -1,0 +1,101 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.22'
+    
+    - name: Run tests
+      run: go test -v ./...
+    
+    - name: Build for multiple platforms
+      run: |
+        # Linux amd64
+        GOOS=linux GOARCH=amd64 go build -o dist/yandex-gpt-api-linux-amd64 cmd/api/main.go
+        
+        # Linux arm64
+        GOOS=linux GOARCH=arm64 go build -o dist/yandex-gpt-api-linux-arm64 cmd/api/main.go
+        
+        # macOS amd64
+        GOOS=darwin GOARCH=amd64 go build -o dist/yandex-gpt-api-darwin-amd64 cmd/api/main.go
+        
+        # macOS arm64 (M1/M2)
+        GOOS=darwin GOARCH=arm64 go build -o dist/yandex-gpt-api-darwin-arm64 cmd/api/main.go
+        
+        # Windows amd64
+        GOOS=windows GOARCH=amd64 go build -o dist/yandex-gpt-api-windows-amd64.exe cmd/api/main.go
+    
+    - name: Create archives
+      run: |
+        cd dist
+        tar -czf yandex-gpt-api-linux-amd64.tar.gz yandex-gpt-api-linux-amd64
+        tar -czf yandex-gpt-api-linux-arm64.tar.gz yandex-gpt-api-linux-arm64
+        tar -czf yandex-gpt-api-darwin-amd64.tar.gz yandex-gpt-api-darwin-amd64
+        tar -czf yandex-gpt-api-darwin-arm64.tar.gz yandex-gpt-api-darwin-arm64
+        zip yandex-gpt-api-windows-amd64.zip yandex-gpt-api-windows-amd64.exe
+    
+    - name: Generate changelog
+      id: changelog
+      run: |
+        echo "CHANGELOG<<EOF" >> $GITHUB_OUTPUT
+        git log $(git describe --tags --abbrev=0 HEAD^)..HEAD --pretty=format:"- %s (%h)" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          dist/*.tar.gz
+          dist/*.zip
+        body: |
+          ## 🚀 Release ${{ github.ref_name }}
+          
+          ### Changes
+          ${{ steps.changelog.outputs.CHANGELOG }}
+          
+          ### 📦 Downloads
+          
+          Choose the appropriate binary for your platform:
+          
+          - **Linux AMD64**: `yandex-gpt-api-linux-amd64.tar.gz`
+          - **Linux ARM64**: `yandex-gpt-api-linux-arm64.tar.gz`
+          - **macOS Intel**: `yandex-gpt-api-darwin-amd64.tar.gz`
+          - **macOS Apple Silicon (M1/M2)**: `yandex-gpt-api-darwin-arm64.tar.gz`
+          - **Windows**: `yandex-gpt-api-windows-amd64.zip`
+          
+          ### 🔧 Installation
+          
+          ```bash
+          # Extract the archive
+          tar -xzf yandex-gpt-api-*.tar.gz
+          
+          # Make executable (Linux/macOS)
+          chmod +x yandex-gpt-api-*
+          
+          # Move to PATH (optional)
+          sudo mv yandex-gpt-api-* /usr/local/bin/yandex-gpt-api
+          ```
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
