@@ -16,7 +16,6 @@ linters:
     - misspell      # Орфография в комментариях
     - revive        # Быстрый линтер
     - gosec         # Проверка безопасности
-    - shadow        # Проверка shadowing переменных
 
 linters-settings:
   errcheck:
@@ -25,7 +24,7 @@ linters-settings:
   
   govet:
     enable:
-      - shadow
+      - shadow    # Проверка shadowing переменных
   
   revive:
     confidence: 0.8

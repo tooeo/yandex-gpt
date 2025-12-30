@@ -61,7 +61,7 @@ func (a *App) setupRoutes() {
 // Run запускает HTTP сервер
 func (a *App) Run() error {
 	addr := fmt.Sprintf("%s:%s", a.config.Server.Host, a.config.Server.Port)
-	
+
 	// Создаем сервер с таймаутами для безопасности
 	server := &http.Server{
 		Addr:           addr,
@@ -71,7 +71,7 @@ func (a *App) Run() error {
 		IdleTimeout:    60 * time.Second,
 		MaxHeaderBytes: 1 << 20, // 1 MB
 	}
-	
+
 	return server.ListenAndServe()
 }
 
