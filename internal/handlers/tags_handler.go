@@ -117,11 +117,13 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	response, err := json.Marshal(payload)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte("Internal Server Error"))
+		//nolint:errcheck // Игнорируем ошибку записи, т.к. уже обрабатываем ошибку маршалинга
+		w.Write([]byte("Internal Server Error"))
 		return
 	}
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(code)
-	_, _ = w.Write(response)
+	//nolint:errcheck // Игнорируем ошибку записи, т.к. нет способа корректно обработать отключение клиента
+	w.Write(response)
 }
